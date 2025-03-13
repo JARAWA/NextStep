@@ -1,4 +1,4 @@
-class Modal {
+export default class Modal {
     static modal = null;
     static passwordStrengthTimeout = null;
 
@@ -208,6 +208,3 @@ class Modal {
 
 // Expose to global scope
 window.Modal = Modal;
-
-// Export as default
-export default Modal;
