@@ -1,16 +1,18 @@
 // Main JavaScript functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Load all components
-    loadComponent('header-container', 'components/header.html');
-    loadComponent('nav-container', 'components/nav.html');
-    loadComponent('footer-container', 'components/footer.html');
-    loadComponent('modal-container', 'components/modal.html');
-
-    // Initialize after components are loaded
-    setTimeout(() => {
+    Promise.all([
+        loadComponent('header-container', 'components/header.html'),
+        loadComponent('nav-container', 'components/nav.html'),
+        loadComponent('footer-container', 'components/footer.html'),
+        loadComponent('modal-container', 'components/modal.html')
+    ]).then(() => {
+        // Initialize after all components are loaded
         Modal.init();
         Auth.init();
-    }, 1000);
+    }).catch(error => {
+        console.error('Error loading components:', error);
+    });
 });
 
 // Function to load components
@@ -21,6 +23,7 @@ async function loadComponent(containerId, componentPath) {
         document.getElementById(containerId).innerHTML = data;
     } catch (error) {
         console.error(`Error loading component ${componentPath}:`, error);
+        throw error; // Re-throw to be caught by Promise.all
     }
 }
 
