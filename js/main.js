@@ -1,4 +1,3 @@
-// Main JavaScript functionality
 import Auth from './auth.js';
 import Modal from './modal.js';
 
@@ -35,7 +34,7 @@ async function loadComponent(containerId, componentPath) {
         document.getElementById(containerId).innerHTML = data;
     } catch (error) {
         console.error(`Error loading component ${componentPath}:`, error);
-        throw error; // Re-throw to be caught by Promise.all
+        throw error;
     }
 }
 
