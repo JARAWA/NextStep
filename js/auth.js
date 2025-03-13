@@ -32,6 +32,7 @@ class Auth {
     // Authentication State
     static isLoggedIn = false;
     static user = null;
+    static auth = window.firebaseAuth;
 
     // Validation Methods
     static validateEmail(email) {
@@ -109,6 +110,8 @@ class Auth {
     // Comprehensive Signup Method
     static async handleSignup(event) {
         event.preventDefault();
+
+        console.log('Signup method called'); // Debug log
         
         // Reset previous errors
         ['Name', 'Email', 'Password', 'ConfirmPassword'].forEach(field => {
@@ -128,6 +131,8 @@ class Auth {
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
 
+         console.log('Signup form values:', { name, email }); // Debug log
+        
         // Comprehensive Validation
         const validationChecks = [
             {
@@ -171,6 +176,7 @@ class Auth {
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
 
             // Create user in Firebase
+             console.log('Attempting to create user'); // Debug log
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
@@ -182,6 +188,8 @@ class Auth {
             // Send email verification
             await sendEmailVerification(user);
 
+            console.log('User created successfully', user); // Debug log
+            
             // Update authentication state
             this.user = user;
             this.isLoggedIn = true;
@@ -189,7 +197,7 @@ class Auth {
             Modal.hide();
             
             // Show success toast
-            showToast('Account created successfully! Please verify your email.', 'success');
+             window.showToast('Account created successfully!', 'success');
 
             // Reset form
             event.target.reset();
