@@ -3,14 +3,29 @@ class Modal {
     static passwordStrengthTimeout = null;
 
     static init() {
-        this.modal = document.getElementById('loginModal');
-        this.setupEventListeners();
+        // Wrap initialization in a try-catch to handle potential errors
+        try {
+            this.modal = document.getElementById('loginModal');
+            
+            if (!this.modal) {
+                console.error('Login modal not found');
+                return;
+            }
+
+            this.setupEventListeners();
+        } catch (error) {
+            console.error('Error initializing modal:', error);
+        }
     }
 
     static setupEventListeners() {
+        // Close button
         const closeBtn = this.modal.querySelector('.close');
-        closeBtn.onclick = () => this.hide();
+        if (closeBtn) {
+            closeBtn.onclick = () => this.hide();
+        }
 
+        // Modal background click to close
         window.onclick = (event) => {
             if (event.target === this.modal) {
                 this.hide();
@@ -18,25 +33,70 @@ class Modal {
         };
 
         // Password strength checker
+        this.setupPasswordStrengthListener();
+
+        // Form toggle links
+        this.setupFormToggleListeners();
+    }
+
+    static setupPasswordStrengthListener() {
         const signupPassword = document.getElementById('signupPassword');
-        signupPassword.addEventListener('input', (e) => {
-            clearTimeout(this.passwordStrengthTimeout);
-            this.passwordStrengthTimeout = setTimeout(() => {
-                this.checkPasswordStrength(e.target.value);
-            }, 300);
-        });
+        
+        if (signupPassword) {
+            signupPassword.addEventListener('input', (e) => {
+                clearTimeout(this.passwordStrengthTimeout);
+                this.passwordStrengthTimeout = setTimeout(() => {
+                    this.checkPasswordStrength(e.target.value);
+                }, 300);
+            });
+        }
+    }
+
+    static setupFormToggleListeners() {
+        // Signup link
+        const signupLink = document.querySelector('a[onclick*="toggleForms(\'signup\')"]');
+        if (signupLink) {
+            signupLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleForms('signup');
+            });
+        }
+
+        // Forgot password link
+        const forgotPasswordLink = document.querySelector('a[onclick*="showForgotPassword()"]');
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showForgotPassword();
+            });
+        }
+
+        // Login link in signup form
+        const loginLink = document.querySelector('a[onclick*="toggleForms(\'login\')"]');
+        if (loginLink) {
+            loginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleForms('login');
+            });
+        }
     }
 
     static show() {
-        this.modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        this.toggleForms('login'); // Always show login form first
+        if (this.modal) {
+            this.modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            this.toggleForms('login'); // Always show login form first
+        } else {
+            console.error('Modal not initialized');
+        }
     }
 
     static hide() {
-        this.modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-        this.resetForms();
+        if (this.modal) {
+            this.modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            this.resetForms();
+        }
     }
 
     static toggleForms(form) {
@@ -44,8 +104,13 @@ class Modal {
         const signupForm = document.getElementById('signupForm');
         const forgotPasswordForm = document.getElementById('forgotPasswordForm');
 
-        [loginForm, signupForm, forgotPasswordForm].forEach(form => {
-            form.classList.remove('active');
+        if (!loginForm || !signupForm || !forgotPasswordForm) {
+            console.error('One or more form elements not found');
+            return;
+        }
+
+        [loginForm, signupForm, forgotPasswordForm].forEach(formEl => {
+            formEl.classList.remove('active');
         });
 
         switch(form) {
@@ -157,3 +222,6 @@ class Modal {
         this.toggleForms('forgot');
     }
 }
+
+// Expose methods globally for inline onclick attributes
+window.Modal = Modal;
