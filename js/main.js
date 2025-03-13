@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loadComponent('modal-container', 'components/modal.html')
     ]).then(() => {
         // Ensure Modal and Auth are properly initialized
+        console.log('Initializing Modal and Auth');
+        
         if (typeof Modal.init === 'function') {
             Modal.init();
         } else {
