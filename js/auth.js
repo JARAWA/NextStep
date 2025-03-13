@@ -1,40 +1,54 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyC7tvZe9NeHRhYuTVrQnkaSG7Nkj3ZS40U",
+  authDomain: "nextstep-log.firebaseapp.com",
+  projectId: "nextstep-log",
+  storageBucket: "nextstep-log.firebasestorage.app",
+  messagingSenderId: "9308831285",
+  appId: "1:9308831285:web:d55ed6865804c50f743b7c",
+  measurementId: "G-BPGP3TBN3N"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
 class Auth {
     static isLoggedIn = false;
     static user = null;
 
     static init() {
-        this.checkAuthStatus();
         this.setupAuthButtons();
-    }
-
-    static checkAuthStatus() {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-            this.user = JSON.parse(savedUser);
-            this.isLoggedIn = true;
-            this.updateUI();
-        }
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                this.user = user;
+                this.isLoggedIn = true;
+                this.updateUI();
+            } else {
+                this.user = null;
+                this.isLoggedIn = false;
+                this.updateUI();
+            }
+        });
     }
 
     static setupAuthButtons() {
-        // Find all buttons that require login
         const generateButtons = document.querySelectorAll('[data-requires-login="true"]');
         
         generateButtons.forEach(btn => {
-            const originalHref = btn.href; // Store original href if it's an anchor
-            
-            // Remove href to prevent direct navigation
+            const originalHref = btn.href;
             if (btn.tagName === 'A') {
                 btn.removeAttribute('href');
             }
 
             btn.addEventListener('click', (e) => {
-                e.preventDefault(); // Prevent default action
-                
+                e.preventDefault();
                 if (!this.isLoggedIn) {
-                    Modal.show(); // Show login modal
+                    Modal.show();
                 } else {
-                    // If it's an anchor and has an original href, navigate
                     if (btn.tagName === 'A' && originalHref) {
                         window.open(originalHref, '_blank');
                     }
@@ -47,88 +61,37 @@ class Auth {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
-    static validatePassword(password) {
-        return {
-            length: password.length >= 8,
-            uppercase: /[A-Z]/.test(password),
-            lowercase: /[a-z]/.test(password),
-            number: /[0-9]/.test(password),
-            special: /[!@#$%^&*]/.test(password)
-        };
-    }
-
     static async handleSignup(event) {
         event.preventDefault();
         
-        // Reset previous errors
-        ['Name', 'Email', 'Password', 'ConfirmPassword'].forEach(field => {
-            Modal.hideError(`signup${field}Error`);
-        });
+        Modal.hideError('signupEmailError');
+        Modal.hideError('signupPasswordError');
+        Modal.hideError('confirmPasswordError');
 
-        const name = document.getElementById('signupName').value.trim();
         const email = document.getElementById('signupEmail').value.trim();
         const password = document.getElementById('signupPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
 
-        // Validate name
-        if (name.length < 2) {
-            Modal.showError('signupNameError', 'Name must be at least 2 characters long');
-            return;
-        }
-
-        // Validate email
         if (!this.validateEmail(email)) {
             Modal.showError('signupEmailError', 'Please enter a valid email address');
             return;
         }
 
-        // Validate password
-        const passwordReqs = this.validatePassword(password);
-        if (!Object.values(passwordReqs).every(req => req)) {
-            Modal.showError('signupPasswordError', 'Password does not meet all requirements');
-            return;
-        }
-
-        // Validate password match
         if (password !== confirmPassword) {
             Modal.showError('confirmPasswordError', 'Passwords do not match');
             return;
         }
 
         try {
-            // Here you would typically make an API call to your backend
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            if (users.some(user => user.email === email)) {
-                Modal.showError('signupEmailError', 'Email already registered');
-                return;
-            }
-
-            const newUser = {
-                id: Date.now(),
-                name,
-                email,
-                password: btoa(password) // Basic encoding (NOT secure for production!)
-            };
-
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
-
-            // Auto login
-            this.user = {
-                id: newUser.id,
-                name: newUser.name,
-                email: newUser.email
-            };
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            this.user = userCredential.user;
             this.isLoggedIn = true;
-            localStorage.setItem('user', JSON.stringify(this.user));
-
             this.updateUI();
             Modal.hide();
             showToast('Account created successfully!', 'success');
         } catch (error) {
             console.error('Signup error:', error);
-            showToast('Signup failed. Please try again.', 'error');
+            Modal.showError('signupPasswordError', error.message);
         }
     }
 
@@ -140,7 +103,6 @@ class Auth {
 
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
-        const rememberMe = document.getElementById('rememberMe').checked;
 
         if (!this.validateEmail(email)) {
             Modal.showError('loginEmailError', 'Please enter a valid email address');
@@ -148,36 +110,15 @@ class Auth {
         }
 
         try {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => 
-                u.email === email && 
-                btoa(password) === u.password
-            );
-
-            if (!user) {
-                Modal.showError('loginPasswordError', 'Invalid email or password');
-                return;
-            }
-
-            this.user = {
-                id: user.id,
-                name: user.name,
-                email: user.email
-            };
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            this.user = userCredential.user;
             this.isLoggedIn = true;
-            
-            if (rememberMe) {
-                localStorage.setItem('user', JSON.stringify(this.user));
-            } else {
-                sessionStorage.setItem('user', JSON.stringify(this.user));
-            }
-
             this.updateUI();
             Modal.hide();
             showToast('Login successful!', 'success');
         } catch (error) {
             console.error('Login error:', error);
-            showToast('Login failed. Please try again.', 'error');
+            Modal.showError('loginPasswordError', error.message);
         }
     }
 
@@ -192,19 +133,25 @@ class Auth {
             return;
         }
 
-        // Here you would typically make an API call to your backend
-        // For demo, we'll just show a success message
-        showToast('Password reset link sent to your email!', 'success');
-        Modal.hide();
+        try {
+            await sendPasswordResetEmail(auth, email);
+            showToast('Password reset link sent to your email!', 'success');
+            Modal.hide();
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            Modal.showError('resetEmailError', error.message);
+        }
     }
 
     static logout() {
-        this.user = null;
-        this.isLoggedIn = false;
-        localStorage.removeItem('user');
-        sessionStorage.removeItem('user');
-        this.updateUI();
-        showToast('Logged out successfully', 'info');
+        signOut(auth).then(() => {
+            this.user = null;
+            this.isLoggedIn = false;
+            this.updateUI();
+            showToast('Logged out successfully', 'info');
+        }).catch((error) => {
+            console.error('Logout error:', error);
+        });
     }
 
     static updateUI() {
@@ -214,7 +161,6 @@ class Auth {
         if (this.isLoggedIn) {
             generateButtons.forEach(btn => {
                 if (btn.tagName === 'A') {
-                    // Restore original href for anchor tags
                     if (btn.dataset.originalHref) {
                         btn.href = btn.dataset.originalHref;
                     }
@@ -225,7 +171,7 @@ class Auth {
             if (userInfo) {
                 userInfo.innerHTML = `
                     <div class="user-menu">
-                        <span>Welcome, ${this.user.name}</span>
+                        <span>Welcome, ${this.user.email}</span>
                         <button onclick="Auth.logout()" class="logout-btn">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
@@ -235,7 +181,6 @@ class Auth {
         } else {
             generateButtons.forEach(btn => {
                 if (btn.tagName === 'A') {
-                    // Store and remove href
                     btn.dataset.originalHref = btn.href;
                     btn.removeAttribute('href');
                 }
@@ -252,3 +197,5 @@ class Auth {
         }
     }
 }
+
+export default Auth;
