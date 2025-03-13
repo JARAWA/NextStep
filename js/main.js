@@ -44,3 +44,6 @@ function showToast(message, type = 'info') {
         }, 3000);
     }, 100);
 }
+
+// Expose showToast globally
+window.showToast = showToast;
