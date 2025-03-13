@@ -1,4 +1,7 @@
 // Main JavaScript functionality
+import Auth from './auth.js';
+import Modal from './modal.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Load all components
     Promise.all([
@@ -7,9 +10,18 @@ document.addEventListener('DOMContentLoaded', function() {
         loadComponent('footer-container', 'components/footer.html'),
         loadComponent('modal-container', 'components/modal.html')
     ]).then(() => {
-        // Initialize after all components are loaded
-        Modal.init();
-        Auth.init();
+        // Ensure Modal and Auth are properly initialized
+        if (typeof Modal.init === 'function') {
+            Modal.init();
+        } else {
+            console.error('Modal.init is not a function');
+        }
+
+        if (typeof Auth.init === 'function') {
+            Auth.init();
+        } else {
+            console.error('Auth.init is not a function');
+        }
     }).catch(error => {
         console.error('Error loading components:', error);
     });
