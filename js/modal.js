@@ -184,13 +184,22 @@ class Modal {
 
     static showError(elementId, message) {
         const errorElement = document.getElementById(elementId);
-        errorElement.textContent = message;
-        errorElement.classList.add('show');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        } else {
+            console.warn(`Error element ${elementId} not found`);
+        }
     }
 
     static hideError(elementId) {
         const errorElement = document.getElementById(elementId);
-        errorElement.classList.remove('show');
+       if (errorElement) {
+            errorElement.classList.remove('show');
+            errorElement.textContent = ''; // Clear error text
+        } else {
+            console.warn(`Error element ${elementId} not found`);
+        }
     }
 
     static resetForms() {
