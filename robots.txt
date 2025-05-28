@@ -1,4 +1,0 @@
-User-agent: *
-Disallow:
-
-Sitemap: https://nextstep-nexn.onrender.com/sitemap.xml
